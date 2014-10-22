@@ -19,55 +19,71 @@
  * IN THE SOFTWARE.
  */
 
-#include <errno.h>
+#ifdef _WIN32
 
-#ifndef _WIN32
-# include <fcntl.h>
-# include <sys/socket.h>
-# include <unistd.h>
-#endif
+#include <errno.h>
 
 #include "uv.h"
 #include "task.h"
 
-#define NUM_SOCKETS 64
-
+uv_os_sock_t sock;
+uv_poll_t handle;
 
 static int close_cb_called = 0;
 
 
-static void close_cb(uv_handle_t* handle) {
+static void close_cb(uv_handle_t* h) {
   close_cb_called++;
 }
 
 
-TEST_IMPL(poll_close) {
-  uv_os_sock_t sockets[NUM_SOCKETS];
-  uv_poll_t poll_handles[NUM_SOCKETS];
-  int i;
+static void poll_cb(uv_poll_t* h, int status, int events) {
+  int r;
 
-#ifdef _WIN32
-  {
-    struct WSAData wsa_data;
-    int r = WSAStartup(MAKEWORD(2, 2), &wsa_data);
-    ASSERT(r == 0);
-  }
-#endif
+  ASSERT(status == 0);
+  ASSERT(h == &handle);
 
-  for (i = 0; i < NUM_SOCKETS; i++) {
-    sockets[i] = socket(AF_INET, SOCK_STREAM, 0);
-    uv_poll_init_socket(uv_default_loop(), &poll_handles[i], sockets[i]);
-    uv_poll_start(&poll_handles[i], UV_READABLE | UV_WRITABLE, NULL);
-  }
+  r = uv_poll_start(&handle, UV_READABLE, poll_cb);
+  ASSERT(r == 0);
 
-  for (i = 0; i < NUM_SOCKETS; i++) {
-    uv_close((uv_handle_t*) &poll_handles[i], close_cb);
-  }
+  closesocket(sock);
+  uv_close((uv_handle_t*) &handle, close_cb);
+
+}
+
+
+TEST_IMPL(poll_closesocket) {
+  struct WSAData wsa_data;
+  int r;
+  unsigned long on;
+  struct sockaddr_in addr;
+
+  r = WSAStartup(MAKEWORD(2, 2), &wsa_data);
+  ASSERT(r == 0);
+
+  sock = socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT(sock != INVALID_SOCKET);
+  on = 1;
+  r = ioctlsocket(sock, FIONBIO, &on);
+  ASSERT(r == 0);
+
+  r = uv_ip4_addr("127.0.0.1", TEST_PORT, &addr);
+  ASSERT(r == 0);
+
+  r = connect(sock, (const struct sockaddr*) &addr, sizeof addr);
+  ASSERT(r != 0);
+  ASSERT(WSAGetLastError() == WSAEWOULDBLOCK);
+
+  r = uv_poll_init_socket(uv_default_loop(), &handle, sock);
+  ASSERT(r == 0);
+  r = uv_poll_start(&handle, UV_WRITABLE, poll_cb);
+  ASSERT(r == 0);
 
   uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 
-  ASSERT(close_cb_called == NUM_SOCKETS);
+  ASSERT(close_cb_called == 1);
 
   MAKE_VALGRIND_HAPPY();
   return 0;
 }
+#endif
