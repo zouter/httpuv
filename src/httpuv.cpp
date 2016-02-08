@@ -373,7 +373,7 @@ void destroyServer(std::string handle) {
 void dummy_close_cb(uv_handle_t* handle) {
 }
 
-void stop_loop_timer_cb(uv_timer_t* handle, int status) {
+void stop_loop_timer_cb(uv_timer_t* handle) {
   uv_stop(handle->loop);
 }
 
@@ -386,7 +386,7 @@ bool run(uint32_t timeoutMillis) {
   if (!timer_req.loop) {
     r = uv_timer_init(uv_default_loop(), &timer_req);
     if (r) {
-      throwLastError(uv_default_loop(),
+      throwError(r,
           "Failed to initialize libuv timeout timer: ");
     }
   }
@@ -395,7 +395,7 @@ bool run(uint32_t timeoutMillis) {
     uv_timer_stop(&timer_req);
     r = uv_timer_start(&timer_req, &stop_loop_timer_cb, timeoutMillis, 0);
     if (r) {
-      throwLastError(uv_default_loop(),
+      throwError(r,
           "Failed to start libuv timeout timer: ");
     }
   }
