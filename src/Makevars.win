@@ -1,18 +1,17 @@
 
 ## Use the R_HOME indirection to support installations of multiple R version
-PKG_LIBS = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()") ./libuv/libuv.a ./http-parser/http_parser.o ./sha1/sha1.o ./base64/base64.o -lWs2_32 -lkernel32 -lpsapi -liphlpapi
+PKG_LIBS = $(shell "${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" -e "Rcpp:::LdFlags()") ../windows/libuv-1.8.0/lib${R_ARCH}/libuv.a ./http-parser/http_parser.o ./sha1/sha1.o ./base64/base64.o -lpthread -lws2_32 -lkernel32 -lpsapi -liphlpapi -lshell32 -luserenv
 
-PKG_CPPFLAGS += -I./libuv/include -I./http-parser -I./sha1 -I./base64 -D_WIN32_WINNT=0x0600
+PKG_CPPFLAGS += -I../windows/libuv-1.8.0/include -I./http-parser -I./sha1 -I./base64 -D_WIN32_WINNT=0x0600
 CFLAGS += -D_WIN32_WINNT=0x0600
 
-.PHONY: all libuv/libuv.a http-parser/http_parser.o
+.PHONY: all winlibs http-parser/http_parser.o
 
-all: $(SHLIB) libuv/libuv.a http-parser/http_parser.o sha1/sha1.o base64/base64.o
-$(SHLIB): libuv/libuv.a http-parser/http_parser.o sha1/sha1.o base64/base64.o
+all: $(SHLIB) winlibs http-parser/http_parser.o sha1/sha1.o base64/base64.o
+$(SHLIB): winlibs http-parser/http_parser.o sha1/sha1.o base64/base64.o
 
-libuv/libuv.a:
-	make --directory=libuv \
-		CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" SRCDIR=. PLATFORM=mingw libuv.a
+winlibs:
+	"${R_HOME}/bin${R_ARCH_BIN}/Rscript.exe" "../tools/winlibs.R"
 
 http-parser/http_parser.o:
 	make --directory=http-parser \
