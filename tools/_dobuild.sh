@@ -2,6 +2,12 @@
 
 set -e
 
+# Cross compilation instructions found here (including missing.h):
+# https://github.com/joyent/libuv/wiki/Cross-compilation
+#
+# We do all this because I was not able to get libuv 1.8.0 building
+# on Windows using the MinGW-w64 toolchain provided with RTools.
+
 rm -rf libuv /vagrant/out
 mkdir -p /vagrant/out/lib/i386
 mkdir -p /vagrant/out/lib/x64
