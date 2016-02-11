@@ -14,3 +14,7 @@ apt-get -y --force-yes install \
 	gcc-mingw-w64-i686 \
 	libtool \
 
+
+# Removes an erroneous duplicate declaration that breaks the build.
+# This was fixed in later versions of mingw-w64.
+sed -i -e '/DWORD MprAdminConnectionRemoveQuarantine/ { N; N; N; N; d; }' /usr/i686-w64-mingw32/include/mprapi.h 
