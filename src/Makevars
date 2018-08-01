@@ -47,7 +47,7 @@ $(SHLIB): libuv/.libs/libuv.a http-parser/http_parser.o sha1/sha1.o base64/base6
 # We needed to rename lt~obsolete.m4 because the name causes problems with R
 # CMD check. Here we rename it back.
 libuv/m4/lt~obsolete.m4: libuv/m4/lt_obsolete.m4
-	cp -p -f libuv/m4/lt_obsolete.m4 libuv/m4/lt~obsolete.m4
+	cp libuv/m4/lt_obsolete.m4 libuv/m4/lt~obsolete.m4
 
 # Run ./configure. We need to touch various autotools-related files to avoid
 # it trying to run autotools programs again. We also need to make sure
